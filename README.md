@@ -6,7 +6,9 @@ when your computer is idle. It works on systems with X11, such as GNU/Linux.
 ## Installation
 
 * Clone this repository:
+
     git clone https://github.com/andreyv/hexchat-autoaway.git
+
 * Move to the `hexchat-autoaway` directory and type `make`
 * Copy the resulting `autoaway.so` file to `~/.config/hexchat/addons`
 (create this directory if it doesn't exist)
@@ -27,7 +29,7 @@ Settings list:
 
 To change the away reason, replace the `Idle` part in `away_cmd`. To execute
 multiple commands on away/back, create a text file with the commands and set
-`away_cmd` or `back_cmd` to `LOAD -e <file>`.
+`away_cmd`/`back_cmd` to `LOAD -e <file>`.
 
 ## Links
 
