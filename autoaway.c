@@ -29,7 +29,7 @@
 
 #define PNAME    "AutoAway"
 #define PDESC    "Set away on idle"
-#define PVERSION "1.0"
+#define PVERSION "1.01"
 
 /* Plugin settings */
 
@@ -57,11 +57,25 @@ static inline void perr(const char *msg)
     hexchat_printf(ph, PNAME ": error: %s\n", msg);
 }
 
-static int timer_cb(void *unused)
+static void set_away()
+{
+    if (!hexchat_get_info(ph, "away"))
+    {
+        hexchat_command(ph, away_cmd);
+    }
+}
+
+static void set_back()
+{
+    if (hexchat_get_info(ph, "away"))
+    {
+        hexchat_command(ph, back_cmd);
+    }
+}
+
+static int check_idle(void *unused)
 {
     (void)unused;
-
-    const char *away = hexchat_get_info(ph, "away");
 
     if (!XScreenSaverQueryInfo(display, DefaultRootWindow(display), saver_info))
     {
@@ -72,17 +86,11 @@ static int timer_cb(void *unused)
     if (saver_info->state == ScreenSaverOn
         || saver_info->idle / 1000 >= (unsigned long)idle_time) /* Idle */
     {
-        if (!away)
-        {
-            hexchat_command(ph, away_cmd);
-        }
+        set_away();
     }
     else /* Not idle */
     {
-        if (away)
-        {
-            hexchat_command(ph, back_cmd);
-        }
+        set_back();
     }
 
     return 1;
@@ -155,7 +163,7 @@ hexchat_plugin_init(hexchat_plugin *plugin_handle,
 
     /* Set up timer */
 
-    hexchat_hook_timer(ph, polling_timeout * 1000, timer_cb, NULL);
+    hexchat_hook_timer(ph, polling_timeout * 1000, check_idle, NULL);
 
     /* All done */
 
@@ -165,8 +173,10 @@ hexchat_plugin_init(hexchat_plugin *plugin_handle,
 }
 
 int
-hexchat_plugin_deinit (void)
+hexchat_plugin_deinit(void)
 {
+    set_back();
+
     /* Save settings */
 
     if (!hexchat_pluginpref_set_str(ph, PREF_AWAY_CMD, away_cmd)
