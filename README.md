@@ -5,10 +5,11 @@ when your computer is idle. It works on systems with X11, such as GNU/Linux.
 
 ## Installation
 
-* Clone this repository: `git clone https://github.com/andreyv/hexchat-autoaway.git`
+* Clone this repository: `git clone https://github.com/andreyv/hexchat-autoaway.git`,
+  or download the [ZIP file](https://github.com/andreyv/hexchat-autoaway/archive/master.zip)
 * Move to the `hexchat-autoaway` directory and type `make`
 * Copy the resulting `autoaway.so` file to `~/.config/hexchat/addons`
-(create this directory if it doesn't exist)
+  (create this directory if it doesn't exist)
 
 ## Configuration
 
