@@ -52,7 +52,7 @@ static Display          *display;
 static XScreenSaverInfo *saver_info;
 
 
-static inline void perr(const char *msg)
+static void perr(const char *msg)
 {
     hexchat_printf(ph, PNAME ": error: %s\n", msg);
 }
