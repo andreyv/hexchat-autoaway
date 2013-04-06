@@ -1,23 +1,23 @@
 TARGET   = autoaway.so
 OBJS     = autoaway.o
 
-PC_LIBS  = x11 xscrnsaver
+my_CPPFLAGS =
+my_CFLAGS   = -Wall -O2 -fPIC
+my_LDFLAGS  =
 
-CPPFLAGS := $(CPPFLAGS)
-CFLAGS   := -Wall -O2 -fPIC $(shell pkg-config $(PC_LIBS) --cflags) $(CFLAGS)
-LDFLAGS  := $(LDFLAGS)
-
-LIBS     := $(shell pkg-config $(PC_LIBS) --libs)
+PC_LIBS     = x11 xscrnsaver
+CFLAGS     := $(CFLAGS) $(shell pkg-config $(PC_LIBS) --cflags)
+LIBS       := $(shell pkg-config $(PC_LIBS) --libs)
 
 .PHONY: all clean
 
 all: $(TARGET)
 
 $(TARGET): $(OBJS)
-	$(CC) -shared -o $@ $^ $(CFLAGS) $(LDFLAGS) $(LIBS)
+	$(CC) -shared -o $@ $^ $(my_CFLAGS) $(CFLAGS) $(my_LDFLAGS) $(LDFLAGS) $(LIBS)
 
 %.o: %.c
-	$(CC) -c -o $@ $< $(CPPFLAGS) $(CFLAGS)
+	$(CC) -c -o $@ $< $(my_CPPFLAGS) $(CPPFLAGS) $(my_CFLAGS) $(CFLAGS)
 
 clean:
 	$(RM) $(OBJS) $(TARGET)
