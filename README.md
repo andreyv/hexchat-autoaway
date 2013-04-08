@@ -30,6 +30,6 @@ multiple commands on away/back, create a text file with the commands and set
 `away_cmd`/`back_cmd` to `LOAD -e <file>`. Currently, `away_cmd` and `back_cmd`
 need to actually include commands to set/remove the away status.
 
-## Links
+## Other links
 
 * http://haus.nakedape.cc/svn/public/trunk/small-projects/desktop/screensaverAutoAway.py
