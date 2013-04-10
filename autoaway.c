@@ -18,6 +18,10 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ *
+ * TODO: Assignment of const char * to char * in hexchat_plugin_get_info()
+ * TODO: What if hexchat_pluginpref_get_str() reads more than CMD_LEN chars?
  */
 
 #include <hexchat-plugin.h>
@@ -37,27 +41,30 @@
 
 static char away_cmd[CMD_LEN] = "ALLSERV AWAY Idle";
 static char back_cmd[CMD_LEN] = "ALLSERV BACK";
-static int  polling_timeout   = 10;      // Seconds
-static int  idle_time         = 10 * 60; // Seconds
+static int  polling_timeout   = 10;      /* Seconds */
+static int  idle_time         = 10 * 60; /* Seconds */
 
 #define PREF_AWAY_CMD         "away_cmd"
 #define PREF_BACK_CMD         "back_cmd"
 #define PREF_POLLING_TIMEOUT  "polling_timeout"
 #define PREF_IDLE_TIME        "idle_time"
 
+/* Global variables */
 
-static hexchat_plugin *ph;
+static hexchat_plugin   *ph;
 
 static Display          *display;
 static XScreenSaverInfo *saver_info;
 
 
-static void perr(const char *msg)
+static void
+perr (const char *msg)
 {
     hexchat_printf(ph, PNAME ": error: %s\n", msg);
 }
 
-static void set_away()
+static void
+set_away (void)
 {
     if (!hexchat_get_info(ph, "away"))
     {
@@ -65,7 +72,8 @@ static void set_away()
     }
 }
 
-static void set_back()
+static void
+set_back (void)
 {
     if (hexchat_get_info(ph, "away"))
     {
@@ -73,7 +81,8 @@ static void set_back()
     }
 }
 
-static int check_idle(void *unused)
+static int
+check_idle (void *unused)
 {
     (void)unused;
 
@@ -97,10 +106,10 @@ static int check_idle(void *unused)
 }
 
 void
-hexchat_plugin_get_info(char **name, char **desc,
-                        char **version, void **reserved)
+hexchat_plugin_get_info (char **name, char **desc,
+                         char **version, void **reserved)
 {
-    *name    = PNAME;    // TODO: Assignment of const char * to char *
+    *name    = PNAME;
     *desc    = PDESC;
     *version = PVERSION;
 
@@ -108,9 +117,9 @@ hexchat_plugin_get_info(char **name, char **desc,
 }
 
 int
-hexchat_plugin_init(hexchat_plugin *plugin_handle,
-                    char **plugin_name, char **plugin_desc,
-                    char **plugin_version, char *arg)
+hexchat_plugin_init (hexchat_plugin *plugin_handle,
+                     char **plugin_name, char **plugin_desc,
+                     char **plugin_version, char *arg)
 {
     int res;
     int event_base, error_base;
@@ -125,7 +134,6 @@ hexchat_plugin_init(hexchat_plugin *plugin_handle,
 
     (void)arg;
 
-
     /* Load settings */
 
     (void)hexchat_pluginpref_get_str(ph, PREF_AWAY_CMD, away_cmd);
@@ -139,7 +147,6 @@ hexchat_plugin_init(hexchat_plugin *plugin_handle,
     {
         idle_time = res;
     }
-
 
     /* Open X display */
 
@@ -160,7 +167,6 @@ hexchat_plugin_init(hexchat_plugin *plugin_handle,
         return 0;
     }
 
-
     /* Set up timer */
 
     hexchat_hook_timer(ph, polling_timeout * 1000, check_idle, NULL);
@@ -173,7 +179,7 @@ hexchat_plugin_init(hexchat_plugin *plugin_handle,
 }
 
 int
-hexchat_plugin_deinit(void)
+hexchat_plugin_deinit (void)
 {
     set_back();
 
