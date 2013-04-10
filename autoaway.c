@@ -56,6 +56,8 @@ static hexchat_plugin   *ph;
 static Display          *display;
 static XScreenSaverInfo *saver_info;
 
+static int               away;
+
 
 static void
 perr (const char *msg)
@@ -66,18 +68,20 @@ perr (const char *msg)
 static void
 set_away (void)
 {
-    if (!hexchat_get_info(ph, "away"))
+    if (!away)
     {
         hexchat_command(ph, away_cmd);
+        away = 1;
     }
 }
 
 static void
 set_back (void)
 {
-    if (hexchat_get_info(ph, "away"))
+    if (away)
     {
         hexchat_command(ph, back_cmd);
+        away = 0;
     }
 }
 

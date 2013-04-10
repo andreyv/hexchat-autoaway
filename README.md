@@ -27,8 +27,7 @@ Settings list:
 
 To change the away reason, replace the `Idle` part in `away_cmd`. To execute
 multiple commands on away/back, create a text file with the commands and set
-`away_cmd`/`back_cmd` to `LOAD -e <file>`. Currently, `away_cmd` and `back_cmd`
-need to actually include commands to set/remove the away status.
+`away_cmd`/`back_cmd` to `LOAD -e <file>`.
 
 ## Other links
 
