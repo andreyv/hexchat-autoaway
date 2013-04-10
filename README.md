@@ -32,3 +32,4 @@ multiple commands on away/back, create a text file with the commands and set
 ## Other links
 
 * http://haus.nakedape.cc/svn/public/trunk/small-projects/desktop/screensaverAutoAway.py
+* https://sites.google.com/site/thvortex/xchat
