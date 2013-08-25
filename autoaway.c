@@ -54,7 +54,7 @@ static int  idle_time         = 10 * 60; /* Seconds */
 static hexchat_plugin   *ph;
 
 static Display          *display;
-static XScreenSaverInfo *saver_info;
+static XScreenSaverInfo *ssinfo;
 
 static int               away;
 
@@ -90,14 +90,14 @@ check_idle (void *unused)
 {
     (void)unused;
 
-    if (!XScreenSaverQueryInfo(display, DefaultRootWindow(display), saver_info))
+    if (!XScreenSaverQueryInfo(display, DefaultRootWindow(display), ssinfo))
     {
         perr("XScreenSaverQueryInfo() failed");
         return 1;
     }
 
-    if (saver_info->state == ScreenSaverOn
-        || saver_info->idle / 1000 >= (unsigned long)idle_time) /* Idle */
+    if (ssinfo->state == ScreenSaverOn
+        || ssinfo->idle / 1000 >= (unsigned long)idle_time) /* Idle */
     {
         set_away();
     }
@@ -165,7 +165,7 @@ hexchat_plugin_init (hexchat_plugin *plugin_handle,
         perr("XScreenSaver extension not available");
         return 0;
     }
-    if (!(saver_info = XScreenSaverAllocInfo()))
+    if (!(ssinfo = XScreenSaverAllocInfo()))
     {
         perr("failed to allocate a XScreenSaverInfo structure");
         return 0;
@@ -200,7 +200,7 @@ hexchat_plugin_deinit (void)
 
     /* Close X display */
 
-    XFree(saver_info);
+    XFree(ssinfo);
     XCloseDisplay(display);
 
     return 1;
