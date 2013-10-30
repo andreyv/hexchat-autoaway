@@ -1,23 +1,27 @@
 TARGET   = autoaway.so
 OBJS     = autoaway.o
 
-my_CPPFLAGS =
-my_CFLAGS   = -Wall -O2 -fPIC
-my_LDFLAGS  =
+SHARED_CC  ?= $(CC) -shared
 
-PC_LIBS     = x11 xscrnsaver
-CFLAGS     := $(CFLAGS) $(shell pkg-config $(PC_LIBS) --cflags)
-LIBS       := $(shell pkg-config $(PC_LIBS) --libs)
+PKG_CONFIG ?= pkg-config
+PACKAGES    = hexchat-plugin x11 xscrnsaver
+
+PC_CFLAGS  := $(shell $(PKG_CONFIG) $(PACKAGES) --cflags)
+PC_LIBS    := $(shell $(PKG_CONFIG) $(PACKAGES) --libs)
+
+CFLAGS     := -Wall -O2 -fPIC $(CFLAGS)
 
 .PHONY: all clean
+
+.DELETE_ON_ERROR:
 
 all: $(TARGET)
 
 $(TARGET): $(OBJS)
-	$(CC) -shared -o $@ $^ $(my_CFLAGS) $(CFLAGS) $(my_LDFLAGS) $(LDFLAGS) $(LIBS)
+	$(SHARED_CC) -o $@ $^ $(CFLAGS) $(PC_CFLAGS) $(LDFLAGS) $(PC_LIBS)
 
 %.o: %.c
-	$(CC) -c -o $@ $< $(my_CPPFLAGS) $(CPPFLAGS) $(my_CFLAGS) $(CFLAGS)
+	$(CC) -c -o $@ $< $(CPPFLAGS) $(CFLAGS) $(PC_CFLAGS)
 
 clean:
 	$(RM) $(OBJS) $(TARGET)
