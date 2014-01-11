@@ -33,7 +33,7 @@
 
 #define PNAME    "AutoAway"
 #define PDESC    "Set away on idle"
-#define PVERSION "1.02"
+#define PVERSION "1.0.2"
 
 /* Plugin settings */
 
