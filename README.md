@@ -3,13 +3,21 @@
 This [HexChat](http://hexchat.org) plugin will automatically mark you away
 when your computer is idle. It works on systems with X11, such as GNU/Linux.
 
-## Installation
+## Prerequisites
 
-* Go to the [Releases](https://github.com/andreyv/hexchat-autoaway/releases)
-  page and download the latest version
-* Unpack the archive, move to the `hexchat-autoaway` directory and type `make`
-* Copy the resulting `autoaway.so` file to `~/.config/hexchat/addons`
-  (create this directory if it doesn't exist)
+* HexChat
+* X11 and Xss (X Screen Saver extension) libraries
+* CMake and pkg-config (for building)
+
+## Building and installation
+
+    cd hexchat-autoaway
+    cmake -DCMAKE_BUILD_TYPE=Release .
+    make
+    sudo make install # Better create a package if you can
+
+You can also simply copy `libautoaway.so` to `~/.config/hexchat/addons`
+instead of the last step.
 
 ## Configuration
 
