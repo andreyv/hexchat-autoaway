@@ -163,11 +163,13 @@ hexchat_plugin_init (hexchat_plugin *plugin_handle,
     if (!XScreenSaverQueryExtension(display, &event_base, &error_base))
     {
         perr("XScreenSaver extension not available");
+        XCloseDisplay(display);
         return 0;
     }
     if (!(ssinfo = XScreenSaverAllocInfo()))
     {
         perr("failed to allocate a XScreenSaverInfo structure");
+        XCloseDisplay(display);
         return 0;
     }
 
@@ -195,7 +197,6 @@ hexchat_plugin_deinit (void)
         || !hexchat_pluginpref_set_int(ph, PREF_IDLE_TIME, idle_time))
     {
         perr("failed to save settings");
-        return 0;
     }
 
     /* Close X display */
