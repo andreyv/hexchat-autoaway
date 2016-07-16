@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.0)
 project(hexchat-autoaway)
 
-add_library(autoaway SHARED autoaway.c)
+add_library(autoaway MODULE autoaway.c)
 
 find_package(X11 REQUIRED)
 if(NOT ${X11_Xscreensaver_FOUND})
