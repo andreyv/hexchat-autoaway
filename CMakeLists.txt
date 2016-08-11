@@ -8,7 +8,7 @@ endif()
 include_directories("${X11_X11_INCLUDE_PATH}" "${X11_Xscreensaver_INCLUDE_PATH}")
 
 find_package(PkgConfig REQUIRED)
-pkg_check_modules(HEXCHAT REQUIRED hexchat-plugin)
+pkg_check_modules(HEXCHAT REQUIRED hexchat-plugin) # TODO: Use IMPORTED_TARGET with CMake 3.6+
 include_directories(${HEXCHAT_INCLUDE_DIRS})
 
 add_library(autoaway MODULE autoaway.c)
