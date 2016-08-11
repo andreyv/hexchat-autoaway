@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required(VERSION 3.4)
 project(hexchat-autoaway)
 
 add_library(autoaway MODULE autoaway.c)
@@ -15,10 +15,6 @@ pkg_check_modules(HEXCHAT REQUIRED hexchat-plugin)
 include_directories(${HEXCHAT_INCLUDE_DIRS})
 target_link_libraries(autoaway ${HEXCHAT_LIBRARIES})
 
-execute_process(COMMAND "${PKG_CONFIG_EXECUTABLE}" hexchat-plugin --variable=hexchatlibdir
-    RESULT_VARIABLE RES
-    OUTPUT_VARIABLE HEXCHAT_LIBDIR OUTPUT_STRIP_TRAILING_WHITESPACE)
-if(NOT ${RES} EQUAL 0)
-    message(FATAL_ERROR "cannot get HexChat libdir")
-endif()
+pkg_get_variable(HEXCHAT_LIBDIR hexchat-plugin hexchatlibdir)
+
 install(TARGETS autoaway DESTINATION "${HEXCHAT_LIBDIR}")
