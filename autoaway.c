@@ -24,6 +24,8 @@
  * TODO: What if hexchat_pluginpref_get_str() reads more than CMD_LEN chars?
  */
 
+#include <stdbool.h>
+
 #include <hexchat-plugin.h>
 
 #include <X11/Xlib.h>
@@ -56,7 +58,7 @@ static hexchat_plugin   *ph;
 static Display          *display;
 static XScreenSaverInfo *ssinfo;
 
-static int               away;
+static bool              away;
 
 
 static void
@@ -71,7 +73,7 @@ set_away (void)
     if (!away)
     {
         hexchat_command(ph, away_cmd);
-        away = 1;
+        away = true;
     }
 }
 
@@ -81,7 +83,7 @@ set_back (void)
     if (away)
     {
         hexchat_command(ph, back_cmd);
-        away = 0;
+        away = false;
     }
 }
 
@@ -125,9 +127,6 @@ hexchat_plugin_init (hexchat_plugin *plugin_handle,
                      char **plugin_name, char **plugin_desc,
                      char **plugin_version, char *arg)
 {
-    int res;
-    int event_base, error_base;
-
     /* Init variables */
 
     ph = plugin_handle;
@@ -143,6 +142,7 @@ hexchat_plugin_init (hexchat_plugin *plugin_handle,
     (void)hexchat_pluginpref_get_str(ph, PREF_AWAY_CMD, away_cmd);
     (void)hexchat_pluginpref_get_str(ph, PREF_BACK_CMD, back_cmd);
 
+    int res;
     if ((res = hexchat_pluginpref_get_int(ph, PREF_POLLING_TIMEOUT)) > 0)
     {
         polling_timeout = res;
@@ -160,6 +160,7 @@ hexchat_plugin_init (hexchat_plugin *plugin_handle,
         return 0;
     }
 
+    int event_base, error_base;
     if (!XScreenSaverQueryExtension(display, &event_base, &error_base))
     {
         perr("XScreenSaver extension not available");
