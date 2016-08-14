@@ -1,7 +1,7 @@
 /*
  * AutoAway -- a HexChat plugin to set away on idle
  *
- * Copyright (C) 2013 Andrey Vihrov <andrey.vihrov@gmail.com>
+ * Copyright (C) 2013-2016 Andrey Vihrov <andrey.vihrov@gmail.com>
  *
  * Based on ideas from
  * https://robots.org.uk/src/xchat/idle.c (Copyright 2004 Sam Morris)
@@ -21,9 +21,10 @@
  *
  *
  * TODO: Assignment of const char * to char * in hexchat_plugin_get_info()
- * TODO: What if hexchat_pluginpref_get_str() reads more than CMD_LEN chars?
+ * TODO: What if hexchat_pluginpref_get_str() reads more than MAX_LEN chars?
  */
 
+#include <assert.h>
 #include <stdbool.h>
 
 #include <hexchat-plugin.h>
@@ -39,17 +40,23 @@
 
 /* Plugin settings */
 
-#define CMD_LEN  512
+#define MAX_LEN  510 /* Maxiumum IRC message length (RFC 2812 section 2.3) */
 
-static char away_cmd[CMD_LEN] = "ALLSERV AWAY Idle";
-static char back_cmd[CMD_LEN] = "ALLSERV BACK";
-static int  polling_timeout   = 10;      /* Seconds */
-static int  idle_time         = 10 * 60; /* Seconds */
+static char away_msg[MAX_LEN]   = "Idle";
+static char away_extra[MAX_LEN] = "";
+static char back_extra[MAX_LEN] = "";
+static int  polling_timeout     = 10;      /* Seconds */
+static int  idle_time           = 10 * 60; /* Seconds */
 
-#define PREF_AWAY_CMD         "away_cmd"
-#define PREF_BACK_CMD         "back_cmd"
-#define PREF_POLLING_TIMEOUT  "polling_timeout"
-#define PREF_IDLE_TIME        "idle_time"
+#define PREF_AWAY_MSG           "away_msg"
+#define PREF_AWAY_EXTRA         "away_extra"
+#define PREF_BACK_EXTRA         "back_extra"
+#define PREF_POLLING_TIMEOUT    "polling_timeout"
+#define PREF_IDLE_TIME          "idle_time"
+
+/* Old settings that are not used anymore */
+#define PREF_AWAY_CMD           "away_cmd"
+#define PREF_BACK_CMD           "back_cmd"
 
 /* Global variables */
 
@@ -58,33 +65,76 @@ static hexchat_plugin   *ph;
 static Display          *display;
 static XScreenSaverInfo *ssinfo;
 
-static bool              away;
+/* HexChat constants */
+
+#define HC_TYPE_SERVER       1
+#define HC_FLAGS_CONNECTED   0x1
+#define HC_FLAGS_MARKED_AWAY 0x4
+
+/* Logging */
+
+#define LOG_ERR  "error"
+#define LOG_WARN "warning"
+#define LOG_DBG  "debug"
+#define LOG(level, ...) (hexchat_printf(ph, PNAME ": " level ": " __VA_ARGS__))
+#ifndef NDEBUG
+#  define DEBUG(...) (LOG(LOG_DBG, __VA_ARGS__))
+#else
+#  define DEBUG(...) ((void)0)
+#endif
 
 
 static void
-perr (const char *msg)
+set_away (bool away)
 {
-    hexchat_printf(ph, PNAME ": error: %s\n", msg);
-}
+    hexchat_list *ch = hexchat_list_get(ph, "channels");
+    assert(ch);
 
-static void
-set_away (void)
-{
-    if (!away)
+    /* Loop over all channels, find servers, and update state for each server */
+    while (hexchat_list_next(ph, ch))
     {
-        hexchat_command(ph, away_cmd);
-        away = true;
-    }
-}
+        if (hexchat_list_int(ph, ch, "type") == HC_TYPE_SERVER)
+        {
+            int flags = hexchat_list_int(ph, ch, "flags");
+            DEBUG("server: %s, flags: 0x%x", hexchat_list_str(ph, ch, "server"), flags);
+            if (!(flags & HC_FLAGS_CONNECTED))
+            {
+                continue;
+            }
 
-static void
-set_back (void)
-{
-    if (away)
-    {
-        hexchat_command(ph, back_cmd);
-        away = false;
+            hexchat_context *ctx = (hexchat_context *)hexchat_list_str(ph, ch, "context");
+            assert(ctx);
+
+            if (!hexchat_set_context(ph, ctx))
+            {
+                LOG(LOG_WARN, "failed to set context for server %s",
+                    hexchat_list_str(ph, ch, "server"));
+                continue;
+            }
+
+            bool marked_away = flags & HC_FLAGS_MARKED_AWAY;
+            if (away && !marked_away)
+            {
+                DEBUG("set away");
+                hexchat_commandf(ph, "AWAY %s", away_msg);
+                if (*away_extra)
+                {
+                    hexchat_command(ph, away_extra);
+                }
+            }
+            else if (!away && marked_away)
+            {
+                DEBUG("set back");
+                hexchat_command(ph, "BACK");
+                if (*back_extra)
+                {
+                    hexchat_command(ph, back_extra);
+                }
+            }
+        }
     }
+
+    hexchat_list_free(ph, ch);
 }
 
 static int
@@ -94,18 +144,20 @@ check_idle (void *unused)
 
     if (!XScreenSaverQueryInfo(display, DefaultRootWindow(display), ssinfo))
     {
-        perr("XScreenSaverQueryInfo() failed");
+        LOG(LOG_ERR, "XScreenSaverQueryInfo() failed");
         return 1;
     }
 
     if (ssinfo->state == ScreenSaverOn
-        || ssinfo->idle / 1000 >= (unsigned long)idle_time) /* Idle */
+        || ssinfo->idle / 1000 >= (unsigned long)idle_time)
     {
-        set_away();
+        DEBUG("idle");
+        set_away(true);
     }
-    else /* Not idle */
+    else
     {
-        set_back();
+        DEBUG("not idle");
+        set_away(false);
     }
 
     return 1;
@@ -139,8 +191,9 @@ hexchat_plugin_init (hexchat_plugin *plugin_handle,
 
     /* Load settings */
 
-    (void)hexchat_pluginpref_get_str(ph, PREF_AWAY_CMD, away_cmd);
-    (void)hexchat_pluginpref_get_str(ph, PREF_BACK_CMD, back_cmd);
+    (void)hexchat_pluginpref_get_str(ph, PREF_AWAY_MSG, away_msg);
+    (void)hexchat_pluginpref_get_str(ph, PREF_AWAY_EXTRA, away_extra);
+    (void)hexchat_pluginpref_get_str(ph, PREF_BACK_EXTRA, back_extra);
 
     int res;
     if ((res = hexchat_pluginpref_get_int(ph, PREF_POLLING_TIMEOUT)) > 0)
@@ -152,24 +205,30 @@ hexchat_plugin_init (hexchat_plugin *plugin_handle,
         idle_time = res;
     }
 
+    if (!hexchat_pluginpref_delete(ph, PREF_AWAY_CMD)
+        || !hexchat_pluginpref_delete(ph, PREF_BACK_CMD))
+    {
+        LOG(LOG_WARN, "failed to delete old settings");
+    }
+
     /* Open X display */
 
     if (!(display = XOpenDisplay(NULL)))
     {
-        perr("failed to open X display");
+        LOG(LOG_ERR, "failed to open X display");
         return 0;
     }
 
     int event_base, error_base;
     if (!XScreenSaverQueryExtension(display, &event_base, &error_base))
     {
-        perr("XScreenSaver extension not available");
+        LOG(LOG_ERR, "XScreenSaver extension not available");
         XCloseDisplay(display);
         return 0;
     }
     if (!(ssinfo = XScreenSaverAllocInfo()))
     {
-        perr("failed to allocate a XScreenSaverInfo structure");
+        LOG(LOG_ERR, "failed to allocate a XScreenSaverInfo structure");
         XCloseDisplay(display);
         return 0;
     }
@@ -188,16 +247,17 @@ hexchat_plugin_init (hexchat_plugin *plugin_handle,
 int
 hexchat_plugin_deinit (void)
 {
-    set_back();
+    set_away(false);
 
     /* Save settings */
 
-    if (!hexchat_pluginpref_set_str(ph, PREF_AWAY_CMD, away_cmd)
-        || !hexchat_pluginpref_set_str(ph, PREF_BACK_CMD, back_cmd)
+    if (!hexchat_pluginpref_set_str(ph, PREF_AWAY_MSG, away_msg)
+        || !hexchat_pluginpref_set_str(ph, PREF_AWAY_EXTRA, away_extra)
+        || !hexchat_pluginpref_set_str(ph, PREF_BACK_EXTRA, back_extra)
         || !hexchat_pluginpref_set_int(ph, PREF_POLLING_TIMEOUT, polling_timeout)
         || !hexchat_pluginpref_set_int(ph, PREF_IDLE_TIME, idle_time))
     {
-        perr("failed to save settings");
+        LOG(LOG_WARN, "failed to save settings");
     }
 
     /* Close X display */
