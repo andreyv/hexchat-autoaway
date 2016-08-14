@@ -25,9 +25,9 @@ close HexChat and edit the file `~/.config/hexchat/addon_autoaway.conf`.
 
 Settings list:
 * `away_msg`: The away message to set (default: `Idle`)
-* `polling_timeout`: The X status polling period, in seconds (default: 10)
 * `idle_time`: The idle time after which the user is considered
   being away, in seconds (default: 600)
+* `polling_timeout`: The X status polling period, in seconds (default: 10)
 * `away_extra`: Extra per-server command to execute when going away
   (default: empty)
 * `back_extra`: Extra per-server command to execute when returning back
