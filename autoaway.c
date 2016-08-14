@@ -65,7 +65,10 @@ static hexchat_plugin   *ph;
 static Display          *display;
 static XScreenSaverInfo *ssinfo;
 
-/* HexChat constants */
+/* RFC 2812 and HexChat constants */
+
+#define RPL_UNAWAY           "305"
+#define RPL_NOWAWAY          "306"
 
 #define HC_TYPE_SERVER       1
 #define HC_FLAGS_CONNECTED   0x1
@@ -117,19 +120,11 @@ set_away (bool away)
             {
                 DEBUG("set away");
                 hexchat_commandf(ph, "AWAY %s", away_msg);
-                if (*away_extra)
-                {
-                    hexchat_command(ph, away_extra);
-                }
             }
             else
             {
                 DEBUG("set back");
                 hexchat_command(ph, "BACK");
-                if (*back_extra)
-                {
-                    hexchat_command(ph, back_extra);
-                }
             }
         }
     }
@@ -161,6 +156,16 @@ check_idle (void *unused)
     }
 
     return 1;
+}
+
+static int
+send_extra_cmd (char *word[], char *word_eol[], void *user_data)
+{
+    (void)word; (void)word_eol;
+
+    hexchat_command(ph, user_data);
+
+    return HEXCHAT_EAT_NONE;
 }
 
 void
@@ -229,9 +234,19 @@ hexchat_plugin_init (hexchat_plugin *plugin_handle,
         return 0;
     }
 
-    /* Set up timer */
+    /* Set up hooks */
 
     hexchat_hook_timer(ph, polling_timeout * 1000, check_idle, NULL);
+
+    /* Ensure that extra commands are executed on any away state change */
+    if (*away_extra)
+    {
+        hexchat_hook_server(ph, RPL_NOWAWAY, HEXCHAT_PRI_NORM, send_extra_cmd, away_extra);
+    }
+    if (*back_extra)
+    {
+        hexchat_hook_server(ph, RPL_UNAWAY, HEXCHAT_PRI_NORM, send_extra_cmd, back_extra);
+    }
 
     /* All done */
 
