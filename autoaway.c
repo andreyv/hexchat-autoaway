@@ -40,7 +40,7 @@
 
 /* Plugin settings */
 
-#define MAX_LEN  510 /* Maxiumum IRC message length (RFC 2812 section 2.3) */
+#define MAX_LEN 511 /* Maximum IRC message length (RFC 2812 section 2.3) plus one */
 
 static char away_msg[MAX_LEN]   = "Idle";
 static char away_extra[MAX_LEN] = "";
