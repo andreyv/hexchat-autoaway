@@ -100,7 +100,8 @@ set_away (bool away)
         {
             int flags = hexchat_list_int(ph, ch, "flags");
             DEBUG("server: %s, flags: 0x%x", hexchat_list_str(ph, ch, "server"), flags);
-            if (!(flags & HC_FLAGS_CONNECTED))
+            if (!(flags & HC_FLAGS_CONNECTED)
+                || away == (bool)(flags & HC_FLAGS_MARKED_AWAY))
             {
                 continue;
             }
@@ -115,8 +116,7 @@ set_away (bool away)
                 continue;
             }
 
-            bool marked_away = flags & HC_FLAGS_MARKED_AWAY;
-            if (away && !marked_away)
+            if (away)
             {
                 DEBUG("set away");
                 hexchat_commandf(ph, "AWAY %s", away_msg);
@@ -125,7 +125,7 @@ set_away (bool away)
                     hexchat_command(ph, away_extra);
                 }
             }
-            else if (!away && marked_away)
+            else
             {
                 DEBUG("set back");
                 hexchat_command(ph, "BACK");
