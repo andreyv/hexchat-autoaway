@@ -32,6 +32,9 @@
 #include <X11/Xlib.h>
 #include <X11/extensions/scrnsaver.h>
 
+#include <gtk/gtk.h>
+#include <gdk/gdkx.h>
+
 /* Plugin identification */
 
 #define PNAME    "AutoAway"
@@ -211,25 +214,21 @@ hexchat_plugin_init (hexchat_plugin *plugin_handle,
         LOG(LOG_WARN, "failed to delete old settings");
     }
 
-    /* Open X display */
+    /* Set up X display */
 
-    if (!(display = XOpenDisplay(NULL)))
-    {
-        LOG(LOG_ERR, "failed to open X display");
-        return 0;
-    }
+    GtkWindow *win = (GtkWindow *)hexchat_get_info(ph, "gtkwin_ptr");
+    assert(win);
+    display = GDK_WINDOW_XDISPLAY(gtk_widget_get_window(GTK_WIDGET(win)));
 
     int event_base, error_base;
     if (!XScreenSaverQueryExtension(display, &event_base, &error_base))
     {
         LOG(LOG_ERR, "XScreenSaver extension not available");
-        XCloseDisplay(display);
         return 0;
     }
     if (!(ssinfo = XScreenSaverAllocInfo()))
     {
         LOG(LOG_ERR, "failed to allocate a XScreenSaverInfo structure");
-        XCloseDisplay(display);
         return 0;
     }
 
@@ -260,10 +259,9 @@ hexchat_plugin_deinit (void)
         LOG(LOG_WARN, "failed to save settings");
     }
 
-    /* Close X display */
+    /* Free resources */
 
     XFree(ssinfo);
-    XCloseDisplay(display);
 
     return 1;
 }
