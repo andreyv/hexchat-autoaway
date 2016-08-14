@@ -1,6 +1,6 @@
 # AutoAway for HexChat
 
-This [HexChat](http://hexchat.org) plugin will automatically mark you away
+This [HexChat](http://hexchat.github.io/) plugin will automatically mark you away
 when your computer is idle. It works on systems that use the GTK+ X11 backend,
 such as GNU/Linux.
 
