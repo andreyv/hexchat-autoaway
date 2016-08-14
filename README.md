@@ -1,12 +1,14 @@
 # AutoAway for HexChat
 
 This [HexChat](http://hexchat.org) plugin will automatically mark you away
-when your computer is idle. It works on systems with X11, such as GNU/Linux.
+when your computer is idle. It works on systems that use the GTK+ X11 backend,
+such as GNU/Linux.
 
-## Prerequisites
+## Dependencies
 
 * HexChat
 * X11 and Xss (X Screen Saver extension) libraries
+* GTK+ 2
 * CMake and pkg-config (for building)
 
 ## Building and installation
@@ -14,10 +16,7 @@ when your computer is idle. It works on systems with X11, such as GNU/Linux.
     cd hexchat-autoaway
     cmake -DCMAKE_BUILD_TYPE=Release .
     make
-    sudo make install # Better create a package if you can
-
-You can also simply copy `libautoaway.so` to `~/.config/hexchat/addons`
-instead of the last step.
+    cp libautoaway.so ~/.config/hexchat/addons
 
 ## Configuration
 
@@ -25,19 +24,20 @@ The plugin should work out of the box. To change the default settings,
 close HexChat and edit the file `~/.config/hexchat/addon_autoaway.conf`.
 
 Settings list:
-* `away_cmd`: The command to execute when going away
-  (default: `ALLSERV AWAY Idle`)
-* `back_cmd`: The command to execute when returning back
-  (default: `ALLSERV BACK`)
+* `away_msg`: The away message to set (default: `Idle`)
 * `polling_timeout`: The X status polling period, in seconds (default: 10)
 * `idle_time`: The idle time after which the user is considered
   being away, in seconds (default: 600)
+* `away_extra`: Extra per-server command to execute when going away
+  (default: empty)
+* `back_extra`: Extra per-server command to execute when returning back
+  (default: empty)
 
-To change the away reason, replace the `Idle` part in `away_cmd`. To execute
-multiple commands on away/back, create a text file with the commands and set
-`away_cmd`/`back_cmd` to `LOAD -e <file>`.
+To execute multiple extra commands on away/back, create a text file with
+the commands and set `away_extra`/`back_extra` to `LOAD -e <file>`.
 
-## Other links
+## Related software
 
-* http://haus.nakedape.cc/svn/public/trunk/small-projects/desktop/screensaverAutoAway.py
+* https://github.com/yrro/xchat-idle
+* https://github.com/TingPing/plugins/blob/master/HexChat/duplicates/screensaver.py
 * https://sites.google.com/site/thvortex/xchat
