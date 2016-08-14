@@ -19,9 +19,6 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
- *
- * TODO: Assignment of const char * to char * in hexchat_plugin_get_info()
- * TODO: What if hexchat_pluginpref_get_str() reads more than MAX_LEN chars?
  */
 
 #include <assert.h>
