@@ -17,7 +17,7 @@ include_directories(SYSTEM ${HEXCHAT_INCLUDE_DIRS})
 set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_EXTENSIONS OFF)
 if(CMAKE_COMPILER_IS_GNUCC)
-    add_compile_options(-Wall -Wextra -pedantic)
+    add_compile_options(-Wall -Wextra -pedantic ${CMAKE_C_FLAGS_RELEASE})
 endif()
 
 add_library(autoaway MODULE autoaway.c)
