@@ -32,6 +32,10 @@ Settings list:
   (default: empty)
 * `back_extra`: Extra per-server command to execute when returning back
   (default: empty)
+* `away_nick_suffix`: The string to be appended to nick name. e.g. `|away`
+  (default: empty)
+* `away_nick_net`: The comma-seperated list of network that `away_nick_suffix` applied when away. e.g. `net1,net2`
+  (default: empty)
 
 To execute multiple extra commands on away/back, create a text file with
 the commands and set `away_extra`/`back_extra` to `LOAD -e <file>`.

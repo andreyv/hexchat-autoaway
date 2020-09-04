@@ -22,6 +22,7 @@
 
 #include <assert.h>
 #include <stdbool.h>
+#include <string.h>
 
 #include <hexchat-plugin.h>
 
@@ -40,18 +41,33 @@
 /* Plugin settings */
 
 #define MAX_LEN 511 /* Maximum IRC message length (RFC 2812 section 2.3) plus one */
+#define MAX_NET 50  /* Maximum number of network */
 
 static char away_msg[MAX_LEN]   = "Idle";
 static char away_extra[MAX_LEN] = "";
 static char back_extra[MAX_LEN] = "";
 static int  polling_timeout     = 10;      /* Seconds */
 static int  idle_time           = 10 * 60; /* Seconds */
+static char  away_nick_suffix[MAX_LEN] = "";
+static char  away_nick_net[MAX_LEN]    = "";
+static char *away_nick_net_list[MAX_NET];
+static char  orig_nick_list[MAX_NET][MAX_LEN];
 
 #define PREF_AWAY_MSG           "away_msg"
 #define PREF_AWAY_EXTRA         "away_extra"
 #define PREF_BACK_EXTRA         "back_extra"
 #define PREF_POLLING_TIMEOUT    "polling_timeout"
 #define PREF_IDLE_TIME          "idle_time"
+
+/* Server specific away nick change
+ * Some servers perfer you change the nick name when away
+ * other servers (e.g. freenode) hate it.
+ *
+ * away_nick_suffix: The nick suffix to append to nick
+ * away_nick_net: ',' seperated networks that allows away nick change
+ */
+#define PREF_AWAY_NICK_SUFFIX "away_nick_suffix"
+#define PREF_AWAY_NICK_NET    "away_nick_net"
 
 /* Old settings that are not used anymore */
 #define PREF_AWAY_CMD           "away_cmd"
@@ -63,6 +79,7 @@ static hexchat_plugin   *ph;
 
 static Display          *display;
 static XScreenSaverInfo *ssinfo;
+static int               away_nick_net_count = 0;
 
 /* RFC 2812 and HexChat constants */
 
@@ -85,6 +102,22 @@ static XScreenSaverInfo *ssinfo;
 #  define DEBUG(...) ((void)0)
 #endif
 
+static int
+away_nick_net_find(hexchat_list *ch)
+{
+    for (int i = 0; i < away_nick_net_count; i++)
+
+    {
+        const char *network = hexchat_list_str(ph, ch, "network");
+        DEBUG("away_nick_net_find: current:%s away_nick_net_list[%d]=%s", network, i,
+              away_nick_net_list[i]);
+        if (strcmp(network, away_nick_net_list[i]) == 0)
+        {
+            return i;
+        }
+    }
+    return -1;
+}
 
 static void
 set_away (bool away)
@@ -115,14 +148,27 @@ set_away (bool away)
                 continue;
             }
 
+            int net_index = away_nick_net_find(ch);
             if (away)
             {
-                DEBUG("set away");
+                DEBUG("set away network:%s", hexchat_list_str(ph, ch, "network"));
+                /* Change nick if it is in away_nick_net */
+                if (*away_nick_suffix && (net_index >= 0))
+                {
+                    strncpy(orig_nick_list[net_index], hexchat_get_info(ph, "nick"), MAX_LEN);
+                    DEBUG("orig_nick: %s", orig_nick_list[net_index]);
+                    hexchat_commandf(ph, "NICK %s%s", orig_nick_list[net_index], away_nick_suffix);
+                }
                 hexchat_commandf(ph, "AWAY %s", away_msg);
             }
             else
             {
-                DEBUG("set back");
+                DEBUG("set back network:%s", hexchat_list_str(ph, ch, "network"));
+                /* Change nick if it is in away_nick_net */
+                if (*away_nick_suffix && (net_index >= 0))
+                {
+                    hexchat_commandf(ph, "NICK %s", orig_nick_list[net_index]);
+                }
                 hexchat_command(ph, "BACK");
             }
         }
@@ -198,6 +244,47 @@ hexchat_plugin_init (hexchat_plugin *plugin_handle,
     (void)hexchat_pluginpref_get_str(ph, PREF_AWAY_MSG, away_msg);
     (void)hexchat_pluginpref_get_str(ph, PREF_AWAY_EXTRA, away_extra);
     (void)hexchat_pluginpref_get_str(ph, PREF_BACK_EXTRA, back_extra);
+    (void)hexchat_pluginpref_get_str(ph, PREF_AWAY_NICK_SUFFIX, away_nick_suffix);
+    (void)hexchat_pluginpref_get_str(ph, PREF_AWAY_NICK_NET, away_nick_net);
+
+    /* Parse the server list */
+    bool string_mode = false;
+    for (int i = 0; i < MAX_LEN && away_nick_net[i] != '\0'; i++)
+    {
+        switch (away_nick_net[i])
+        {
+        case ' ':
+            if (!string_mode)
+            {
+                away_nick_net[i] = '\0';
+            }
+            break;
+        case ',':
+            string_mode      = false;
+            away_nick_net[i] = '\0';
+            break;
+        default:
+            if (!string_mode)
+            {
+                string_mode                               = true;
+                away_nick_net_list[away_nick_net_count++] = &(away_nick_net[i]);
+            }
+            break;
+        }
+    }
+
+    if (*away_nick_suffix)
+    {
+        // strncpy(orig_nick, hexchat_get_info(ph, "network"), MAX_LEN);
+        for (int i = 0; i < away_nick_net_count; i++)
+        {
+#ifndef NDEBUG
+            DEBUG("network[%d]:%s", i, away_nick_net_list[i]);
+#endif
+            /* Reset orig_nick_list */
+            orig_nick_list[i][0] = '\0';
+        }
+    }
 
     int res;
     if ((res = hexchat_pluginpref_get_int(ph, PREF_POLLING_TIMEOUT)) > 0)
@@ -264,6 +351,8 @@ hexchat_plugin_deinit (void)
     if (!hexchat_pluginpref_set_str(ph, PREF_AWAY_MSG, away_msg)
         || !hexchat_pluginpref_set_str(ph, PREF_AWAY_EXTRA, away_extra)
         || !hexchat_pluginpref_set_str(ph, PREF_BACK_EXTRA, back_extra)
+        || !hexchat_pluginpref_set_str(ph, PREF_AWAY_NICK_SUFFIX, away_nick_suffix)
+        || !hexchat_pluginpref_set_str(ph, PREF_AWAY_NICK_NET, away_nick_net)
         || !hexchat_pluginpref_set_int(ph, PREF_POLLING_TIMEOUT, polling_timeout)
         || !hexchat_pluginpref_set_int(ph, PREF_IDLE_TIME, idle_time))
     {
